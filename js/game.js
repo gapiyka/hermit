@@ -1,5 +1,7 @@
 'use strict';
 
+
+//CLASES:
 class Player {
     constructor(gameWidth, gameHeight) {
         this.width = 40;
@@ -120,23 +122,45 @@ class Enemy {
     constructor(image) {
         this.name = this.__proto__.constructor.name;
         this.image = image;
-
         this.width = 40;
         this.height = 40;
         this.maxSpeed = 3;
         this.xSpeed = 0;
         this.ySpeed = 0;
+        const spawn = randomSpawn(this.width, this.height);
+        this.degree = spawn.degree;
+        this.side = spawn.side;
         this.position = {
-            x: random(0, GAME_WIDTH - this.width),
-            y: random(0, GAME_HEIGHT - this.height)
+            x: spawn.x,
+            y: spawn.y
         };
+        switch (this.side) {
+            case "top":
+                this.ySpeed = this.maxSpeed;
+                break;
+            case "right":
+                this.xSpeed = -this.maxSpeed;
+                break;
+            case "bottom":
+                this.ySpeed = -this.maxSpeed;
+                break;
+            case "left":
+                this.xSpeed = this.maxSpeed;
+                break;
+        }
     }
 
     draw(ctx) {
-        ctx.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
-    }
-    update() {
+        ctx.translate(this.position.x, this.position.y);//move to spawn position
+        ctx.rotate(this.degree * Math.PI / 180);//rotate system
+        ctx.drawImage(this.image, 0, 0, this.width, this.height);//draw enemy
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
 
+    }
+    update(deltaTime) {
+        if (!deltaTime) return;
+        this.position.x += this.xSpeed;
+        this.position.y += this.ySpeed;
     }
 }
 
@@ -144,18 +168,53 @@ class Snake extends Enemy {
 
 }
 
+
+//CONSTS:
 const canvas = document.getElementById("gameScreen");
 const ctx = canvas.getContext("2d");
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
 
 let player = new Player(GAME_WIDTH, GAME_HEIGHT);
-let snakeEnemy = new Snake(document.getElementById("snake"));
+let imgsnake = document.getElementById("snake");
+let snakeEnemy = new Snake(imgsnake);
 new InputHandler(player);
 let lastTime = 0;
 
+
+//FUNCTIONS:
 function random(min, max) {
     return Math.floor(Math.random() * (max - min) + min)
+}
+
+function randomSpawn(objWidth, objHeight) {
+    const sides = [//0-top 1-right 2-bottom 3-left
+        {
+            side: "top",
+            x: random(0, GAME_WIDTH - objWidth),
+            y: 0,
+            degree: 180
+        },
+        {
+            side: "right",
+            x: GAME_WIDTH,
+            y: random(0, GAME_HEIGHT - objHeight),
+            degree: 270
+        },
+        {
+            side: "bottom",
+            x: random(0, GAME_WIDTH - objWidth),
+            y: GAME_HEIGHT,
+            degree: 0
+        },
+        {
+            side: "left",
+            x: 0,
+            y: random(0, GAME_HEIGHT - objHeight),
+            degree: 90
+        }
+    ];
+    return sides[random(0, 4)];
 }
 
 function gameLoop(timestamp) {
@@ -165,9 +224,11 @@ function gameLoop(timestamp) {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     player.update(deltaTime);
     player.draw(ctx);
+    snakeEnemy.update(deltaTime);
     snakeEnemy.draw(ctx);
     requestAnimationFrame(gameLoop);
 }
 
+//LAUNCH
 player.draw(ctx);
 gameLoop();
