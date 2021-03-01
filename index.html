@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html id="html" lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>HERMIT🦂</title>
+	<link rel="shortcut icon" href="images/logo.ico" />
+	<style>
+		body {
+			background: linear-gradient(to top right, #a00000, #fff0b0);
+		}
+
+		#gameScreen {
+			background-image: url("images/map.png");
+			border: 1px solid black;
+		}
+
+		.assets {
+			display: none;
+		}
+	</style>
+</head>
+
+<body>
+	<div>
+		<img class="assets" id="snake" src="images/snake.gif">
+		<p align="center"><img src="images/hermit.png" height="70" width="266"></p>
+		<div align="center">
+			<canvas id="gameScreen" width="800" height="600"></canvas>
+		</div>
+	</div>
+
+	<script src="js/game.js"></script>
+</body>
+
+</html>
