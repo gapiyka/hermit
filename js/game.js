@@ -199,6 +199,22 @@ class Snake extends Enemy {
 
 }
 
+class Objects {
+    constructor(image) {
+        this.name = this.__proto__.constructor.name;
+        this.image = image;
+        this.width = 40;
+        this.height = 40;
+        this.position = {
+            x: random(0, GAME_WIDTH - this.width),
+            y: random(0, GAME_HEIGHT - this.height)
+        };
+    }
+    draw(ctx) {
+        ctx.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
+    }
+}
+
 
 //CONSTS:
 const canvas = document.getElementById("gameScreen");
@@ -207,12 +223,14 @@ const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
 const imghero = document.getElementById("hero");
 const imgsnake = document.getElementById("snake");
+const objectsImages = [document.getElementById("rock"), document.getElementById("palm"), document.getElementById("cactus")];
 
 let player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);;
 let Hendler;
 let snakeEnemys;
 let lastTime = 0;
 let IsGameStarted = false;
+let staticObjects = [];
 
 
 //FUNCTIONS:
@@ -257,13 +275,34 @@ function gameLoop(timestamp) {
 
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         player.update(deltaTime);
+
+        staticObjects.forEach(obj => {
+            obj.draw(ctx);
+            //collision(player & object)
+            if ((player.position.x + player.width >= obj.position.x && player.position.x + player.width <= obj.position.x + obj.width) || (player.position.x <= obj.position.x + obj.width && player.position.x >= obj.position.x)) {
+                if ((player.position.y + player.height >= obj.position.y && player.position.y + player.height <= obj.position.y + obj.height) || (player.position.y <= obj.position.y + obj.height && player.position.y >= obj.position.y)) {
+                    player.position.x -= player.speed.x;
+                    player.position.y -= player.speed.y;
+                }
+            }
+            //collision(snake & object)
+            snakeEnemys.forEach(snakeEnemy => {
+                if ((snakeEnemy.position.x + snakeEnemy.width >= obj.position.x && snakeEnemy.position.x + snakeEnemy.width <= obj.position.x + obj.width) || (snakeEnemy.position.x <= obj.position.x + obj.width && snakeEnemy.position.x >= obj.position.x)) {
+                    if ((snakeEnemy.position.y + snakeEnemy.height >= obj.position.y && snakeEnemy.position.y + snakeEnemy.height <= obj.position.y + obj.height) || (snakeEnemy.position.y <= obj.position.y + obj.height && snakeEnemy.position.y >= obj.position.y)) {
+                        if (snakeEnemys.indexOf(snakeEnemy) == 1) snakeEnemys.pop();
+                        else snakeEnemys.shift();//' snakeEnemy = new Snake(imgsnake) ' doesn`t work
+                        snakeEnemys.push(new Snake(imgsnake));
+                    }
+                }
+            });
+        });
         player.draw(ctx);
         snakeEnemys.forEach(snakeEnemy => {
             //check on existing in borders
             if ((snakeEnemy.position.x > -100 && snakeEnemy.position.x < GAME_WIDTH + 100) && (snakeEnemy.position.y > -100 && snakeEnemy.position.y < GAME_HEIGHT + 100)) {
                 snakeEnemy.update(deltaTime);
                 snakeEnemy.draw(ctx);
-                //collision
+                //collision(player & snake)
                 if ((player.position.x + player.width >= snakeEnemy.colision.x && player.position.x + player.width <= snakeEnemy.colision.x + snakeEnemy.width) || (player.position.x <= snakeEnemy.colision.x + snakeEnemy.width && player.position.x >= snakeEnemy.colision.x)) {
                     if ((player.position.y + player.height >= snakeEnemy.colision.y && player.position.y + player.height <= snakeEnemy.colision.y + snakeEnemy.height) || (player.position.y <= snakeEnemy.colision.y + snakeEnemy.height && player.position.y >= snakeEnemy.colision.y)) {
                         IsGameStarted = false;
@@ -294,6 +333,13 @@ function StartGame() {
     snakeEnemys.push(new Snake(imgsnake));
     IsGameStarted = true;
     Hendler = new InputHandler(player);
+    staticObjects = [];
+    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
+    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
+    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
+    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
+    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
+    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
 }
 
 
