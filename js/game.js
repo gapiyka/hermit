@@ -15,6 +15,7 @@ class Player {
         };
         this.lookForward = true;
         this.lookRight = true;
+        this.hp = 100;
     }
     moveLeft() {
         this.speed.x = -this.maxSpeed;
@@ -54,6 +55,10 @@ class Player {
             modelCut = 120;
         }
         ctx.drawImage(this.image, modelCut, 0, this.width, this.height, this.position.x - this.width / 2, this.position.y, 80, 40);
+        if (this.hp > 50) ctx.fillStyle = "green";
+        else if (this.hp < 25) ctx.fillStyle = "red";
+        else ctx.fillStyle = "yellow";
+        ctx.fillRect(this.position.x, this.position.y - 15, this.hp / 2.5, 10);
     }
     update(deltaTime) {
         if (!deltaTime) return;
@@ -64,6 +69,7 @@ class Player {
 
         if (this.position.y < 0) this.position.y = 0;
         else if (this.position.y > GAME_HEIGHT - this.height) this.position.y = GAME_HEIGHT - this.height;
+        if (this.hp <= 0) Loose();
     }
 }
 
@@ -236,6 +242,7 @@ let startGameTime;
 let IsGameStarted = false;
 let staticObjects = [];
 let fruit;
+let secDelta;
 
 
 //FUNCTIONS:
@@ -289,6 +296,8 @@ function gameLoop(timestamp) {
         if ((player.position.x + player.width >= fruit.position.x && player.position.x + player.width <= fruit.position.x + fruit.width) || (player.position.x <= fruit.position.x + fruit.width && player.position.x >= fruit.position.x)) {
             if ((player.position.y + player.height >= fruit.position.y && player.position.y + player.height <= fruit.position.y + fruit.height) || (player.position.y <= fruit.position.y + fruit.height && player.position.y >= fruit.position.y)) {
                 fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
+                player.hp += 10;
+                if (player.hp > 100) player.hp = 100;
             }
         }
 
@@ -321,11 +330,7 @@ function gameLoop(timestamp) {
                 //collision(player & snake)
                 if ((player.position.x + player.width >= snakeEnemy.colision.x && player.position.x + player.width <= snakeEnemy.colision.x + snakeEnemy.width) || (player.position.x <= snakeEnemy.colision.x + snakeEnemy.width && player.position.x >= snakeEnemy.colision.x)) {
                     if ((player.position.y + player.height >= snakeEnemy.colision.y && player.position.y + player.height <= snakeEnemy.colision.y + snakeEnemy.height) || (player.position.y <= snakeEnemy.colision.y + snakeEnemy.height && player.position.y >= snakeEnemy.colision.y)) {
-                        IsGameStarted = false;
-                        //top score check
-                        if (topTimeScore < surviveTime) {
-                            topTimeScore = surviveTime;
-                        }
+                        Loose();
                     }
                 }
             }
@@ -335,11 +340,17 @@ function gameLoop(timestamp) {
                 snakeEnemys.push(new Snake(imgsnake));
             }
         });
+        //SecondsCounter   mb it can be changed on: setInterval(() => { player.hp -= 5 }, 1000);
+        if ((new Date() - secDelta) / 1000 >= 1) {
+            player.hp -= 5;
+            secDelta = new Date();
+        }
     }
     else {
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         player.draw(ctx);
         ctx.font = `48px serif`;
+        ctx.fillStyle = "black";
         ctx.fillText("Press 'Space' to start game", GAME_WIDTH / 6, GAME_HEIGHT / 6);
     }
 
@@ -361,7 +372,16 @@ function StartGame() {
     fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
     topTimeBar.innerHTML = `${topTimeScore} seconds`;
     startGameTime = new Date();
+    secDelta = new Date();
     IsGameStarted = true;
+}
+
+function Loose() {
+    IsGameStarted = false;
+    //top score check
+    if (topTimeScore < surviveTime) {
+        topTimeScore = surviveTime;
+    }
 }
 
 
