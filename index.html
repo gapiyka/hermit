@@ -19,6 +19,15 @@
 		.assets {
 			display: none;
 		}
+
+		#leftPanel {
+			position: absolute;
+			top: 15%;
+			left: 5%;
+			font: 14pt sans-serif;
+			font-weight: 600;
+			color: #ffffff;
+		}
 	</style>
 </head>
 
@@ -29,8 +38,18 @@
 		<img class="assets" id="rock" src="images/rock.png">
 		<img class="assets" id="palm" src="images/palm.png">
 		<img class="assets" id="cactus" src="images/cactus.PNG">
+		<img class="assets" id="baobab" src="images/baobab.png">
 		<p align="center"><img src="images/hermit.png" height="70" width="266"></p>
 		<div align="center">
+			<div id="leftPanel">
+				<p>👾You survived:👾</p>
+				<p id="timescore">0 seconds</p>
+				<br>
+				<br>
+				<p>🏆 Your top Time: 🏆</p>
+				<p id="toptimescore">0 seconds</p>
+			</div>
+
 			<canvas id="gameScreen" width="800" height="600"></canvas>
 		</div>
 	</div>

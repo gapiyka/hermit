@@ -68,7 +68,7 @@ class Player {
 }
 
 class InputHandler {
-    constructor(player) {
+    constructor() {
         document.addEventListener("keydown", event => {//pressed buttons
             switch (event.keyCode) {
                 case 37://arrow-left
@@ -201,7 +201,6 @@ class Snake extends Enemy {
 
 class Objects {
     constructor(image) {
-        this.name = this.__proto__.constructor.name;
         this.image = image;
         this.width = 40;
         this.height = 40;
@@ -224,13 +223,19 @@ const GAME_HEIGHT = 600;
 const imghero = document.getElementById("hero");
 const imgsnake = document.getElementById("snake");
 const objectsImages = [document.getElementById("rock"), document.getElementById("palm"), document.getElementById("cactus")];
+const fruitsImages = [document.getElementById("baobab")];
 
 let player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);;
-let Hendler;
+let TimeTextBar = document.getElementById('timescore');
+let topTimeBar = document.getElementById('toptimescore');
 let snakeEnemys;
 let lastTime = 0;
+let surviveTime = 0;
+let topTimeScore = 0;
+let startGameTime;
 let IsGameStarted = false;
 let staticObjects = [];
+let fruit;
 
 
 //FUNCTIONS:
@@ -276,6 +281,17 @@ function gameLoop(timestamp) {
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         player.update(deltaTime);
 
+        surviveTime = Math.floor((new Date() - startGameTime) / 1000);
+        TimeTextBar.innerHTML = `${surviveTime} seconds`;
+
+        fruit.draw(ctx);
+        //collision(player & fruit)
+        if ((player.position.x + player.width >= fruit.position.x && player.position.x + player.width <= fruit.position.x + fruit.width) || (player.position.x <= fruit.position.x + fruit.width && player.position.x >= fruit.position.x)) {
+            if ((player.position.y + player.height >= fruit.position.y && player.position.y + player.height <= fruit.position.y + fruit.height) || (player.position.y <= fruit.position.y + fruit.height && player.position.y >= fruit.position.y)) {
+                fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
+            }
+        }
+
         staticObjects.forEach(obj => {
             obj.draw(ctx);
             //collision(player & object)
@@ -287,8 +303,8 @@ function gameLoop(timestamp) {
             }
             //collision(snake & object)
             snakeEnemys.forEach(snakeEnemy => {
-                if ((snakeEnemy.position.x + snakeEnemy.width >= obj.position.x && snakeEnemy.position.x + snakeEnemy.width <= obj.position.x + obj.width) || (snakeEnemy.position.x <= obj.position.x + obj.width && snakeEnemy.position.x >= obj.position.x)) {
-                    if ((snakeEnemy.position.y + snakeEnemy.height >= obj.position.y && snakeEnemy.position.y + snakeEnemy.height <= obj.position.y + obj.height) || (snakeEnemy.position.y <= obj.position.y + obj.height && snakeEnemy.position.y >= obj.position.y)) {
+                if ((snakeEnemy.colision.x + snakeEnemy.width >= obj.position.x && snakeEnemy.colision.x + snakeEnemy.width <= obj.position.x + obj.width) || (snakeEnemy.colision.x <= obj.position.x + obj.width && snakeEnemy.colision.x >= obj.position.x)) {
+                    if ((snakeEnemy.colision.y + snakeEnemy.height >= obj.position.y && snakeEnemy.colision.y + snakeEnemy.height <= obj.position.y + obj.height) || (snakeEnemy.colision.y <= obj.position.y + obj.height && snakeEnemy.colision.y >= obj.position.y)) {
                         if (snakeEnemys.indexOf(snakeEnemy) == 1) snakeEnemys.pop();
                         else snakeEnemys.shift();//' snakeEnemy = new Snake(imgsnake) ' doesn`t work
                         snakeEnemys.push(new Snake(imgsnake));
@@ -306,6 +322,10 @@ function gameLoop(timestamp) {
                 if ((player.position.x + player.width >= snakeEnemy.colision.x && player.position.x + player.width <= snakeEnemy.colision.x + snakeEnemy.width) || (player.position.x <= snakeEnemy.colision.x + snakeEnemy.width && player.position.x >= snakeEnemy.colision.x)) {
                     if ((player.position.y + player.height >= snakeEnemy.colision.y && player.position.y + player.height <= snakeEnemy.colision.y + snakeEnemy.height) || (player.position.y <= snakeEnemy.colision.y + snakeEnemy.height && player.position.y >= snakeEnemy.colision.y)) {
                         IsGameStarted = false;
+                        //top score check
+                        if (topTimeScore < surviveTime) {
+                            topTimeScore = surviveTime;
+                        }
                     }
                 }
             }
@@ -329,20 +349,22 @@ function gameLoop(timestamp) {
 function StartGame() {
     player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);
     snakeEnemys = [];
-    snakeEnemys.push(new Snake(imgsnake));
-    snakeEnemys.push(new Snake(imgsnake));
-    IsGameStarted = true;
-    Hendler = new InputHandler(player);
+    snakeEnemys.push(new Snake(imgsnake), new Snake(imgsnake));
+
     staticObjects = [];
-    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
-    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
-    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
-    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
-    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
-    staticObjects.push(new Objects(objectsImages[random(0, 3)]));
+    staticObjects.push(new Objects(objectsImages[random(0, objectsImages.length)]),
+        new Objects(objectsImages[random(0, objectsImages.length)]),
+        new Objects(objectsImages[random(0, objectsImages.length)]),
+        new Objects(objectsImages[random(0, objectsImages.length)]),
+        new Objects(objectsImages[random(0, objectsImages.length)]),
+        new Objects(objectsImages[random(0, objectsImages.length)]));
+    fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
+    topTimeBar.innerHTML = `${topTimeScore} seconds`;
+    startGameTime = new Date();
+    IsGameStarted = true;
 }
 
 
 //LAUNCH
-Hendler = new InputHandler(player);
+new InputHandler();
 gameLoop();
