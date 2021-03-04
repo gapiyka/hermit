@@ -284,7 +284,7 @@ const GAME_HEIGHT = 600;
 const imghero = document.getElementById("hero");
 const enemiesImages = [document.getElementById("snake"), document.getElementById("vulture")];
 const objectsImages = [document.getElementById("rock"), document.getElementById("palm"), document.getElementById("cactus")];
-const fruitsImages = [document.getElementById("baobab")];
+const fruitsImages = [document.getElementById("baobab"), document.getElementById("pumpkin"), document.getElementById("amaranth")];
 
 let player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);;
 let TimeTextBar = document.getElementById('timescore');
