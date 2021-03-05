@@ -17,6 +17,8 @@ Timekiller || Survival
 
 🧩Game ends if: player`s hp equal zero, or player face with any enemy
 
+🌑Every 60 seconds day change on night, and player sight reduce
+
 
 ## LICENSE
 [MIT License](https://github.com/gapiyka/hermit/blob/main/LICENSE)

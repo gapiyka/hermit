@@ -482,6 +482,7 @@ function StartGame() {
     startGameTime = new Date();
     secDelta = new Date();
     nightCounter = 1;
+    IsNightMode = false;
     IsGameStarted = true;
 }
 
