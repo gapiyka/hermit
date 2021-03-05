@@ -289,12 +289,14 @@ const fruitsImages = [document.getElementById("baobab"), document.getElementById
 let player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);;
 let TimeTextBar = document.getElementById('timescore');
 let topTimeBar = document.getElementById('toptimescore');
-let snakeEnemys;
+let snakeEnemies;
 let lastTime = 0;
 let surviveTime = 0;
 let topTimeScore = 0;
 let startGameTime;
 let IsGameStarted = false;
+let IsNightMode = false;
+let nightCounter;
 let staticObjects = [];
 let fruit;
 let vulture;
@@ -365,7 +367,7 @@ function gameLoop(timestamp) {
         staticObjects.forEach(obj => {
             obj.draw(ctx);
             //collision(player & object)
-            if ((player.position.x + player.width >= obj.position.x && player.position.x + player.width <= obj.position.x + obj.width) || (player.position.x <= obj.position.x + obj.width && player.position.x >= obj.position.x)) {
+            if ((player.position.x + player.width >= obj.position.x + 15 && player.position.x + player.width <= obj.position.x + obj.width - 15) || (player.position.x <= obj.position.x + obj.width - 15 && player.position.x + 15 >= obj.position.x)) {
                 if ((player.position.y + player.height >= obj.position.y && player.position.y + player.height <= obj.position.y + obj.height) || (player.position.y <= obj.position.y + obj.height && player.position.y >= obj.position.y)) {
                     player.position.x -= player.speed.x;
                     player.position.y -= player.speed.y;
@@ -373,18 +375,18 @@ function gameLoop(timestamp) {
             }
 
             //collision(snake & object)
-            snakeEnemys.forEach(snakeEnemy => {
+            snakeEnemies.forEach(snakeEnemy => {
                 if ((snakeEnemy.colision.x + snakeEnemy.width >= obj.position.x && snakeEnemy.colision.x + snakeEnemy.width <= obj.position.x + obj.width) || (snakeEnemy.colision.x <= obj.position.x + obj.width && snakeEnemy.colision.x >= obj.position.x)) {
                     if ((snakeEnemy.colision.y + snakeEnemy.height >= obj.position.y && snakeEnemy.colision.y + snakeEnemy.height <= obj.position.y + obj.height) || (snakeEnemy.colision.y <= obj.position.y + obj.height && snakeEnemy.colision.y >= obj.position.y)) {
-                        if (snakeEnemys.indexOf(snakeEnemy) == 1) snakeEnemys.pop();
-                        else snakeEnemys.shift();//' snakeEnemy = new Snake(enemiesImages[0]) ' doesn`t work
-                        snakeEnemys.push(new Snake(enemiesImages[0]));
+                        if (snakeEnemies.indexOf(snakeEnemy) == 1) snakeEnemies.pop();
+                        else snakeEnemies.shift();//' snakeEnemy = new Snake(enemiesImages[0]) ' doesn`t work
+                        snakeEnemies.push(new Snake(enemiesImages[0]));
                     }
                 }
             });
         });
         player.draw(ctx);
-        snakeEnemys.forEach(snakeEnemy => {
+        snakeEnemies.forEach(snakeEnemy => {
             //check on existing in borders
             if ((snakeEnemy.position.x > -100 && snakeEnemy.position.x < GAME_WIDTH + 100) && (snakeEnemy.position.y > -100 && snakeEnemy.position.y < GAME_HEIGHT + 100)) {
                 snakeEnemy.update(deltaTime);
@@ -397,13 +399,54 @@ function gameLoop(timestamp) {
                 }
             }
             else {
-                if (snakeEnemys.indexOf(snakeEnemy) == 1) snakeEnemys.pop();
-                else snakeEnemys.shift();//' snakeEnemy = new Snake(enemiesImages[0]) ' doesn`t work
-                snakeEnemys.push(new Snake(enemiesImages[0]));
+                if (snakeEnemies.indexOf(snakeEnemy) == 1) snakeEnemies.pop();
+                else snakeEnemies.shift();//' snakeEnemy = new Snake(enemiesImages[0]) ' doesn`t work
+                snakeEnemies.push(new Snake(enemiesImages[0]));
             }
         });
         vulture.draw(ctx);
         vulture.update(ctx);
+        //NIGHTMODE
+        if (surviveTime >= 60 * nightCounter) {
+            IsNightMode = true;
+            nightCounter++;
+        }
+        if (IsNightMode) {
+            canvas.style.backgroundImage = "url('images/map_night.png')";
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            player.draw(ctx);
+            if (player.position.x + player.width + 150 >= fruit.position.x && player.position.x - 150 <= fruit.position.x) {
+                if (player.position.y + player.height + 150 >= fruit.position.y && player.position.y - 150 <= fruit.position.y) {
+                    fruit.draw(ctx);
+                }
+            }
+            if (player.position.x + player.width + 150 >= vulture.colision.x && player.position.x - 150 <= vulture.colision.x) {
+                if (player.position.y + player.height + 150 >= vulture.colision.y && player.position.y - 150 <= vulture.colision.y) {
+                    vulture.draw(ctx);
+                }
+            }
+            snakeEnemies.forEach(snakeEnemy => {
+                if (player.position.x + player.width + 150 >= snakeEnemy.colision.x && player.position.x - 150 <= snakeEnemy.colision.x) {
+                    if (player.position.y + player.height + 150 >= snakeEnemy.colision.y && player.position.y - 150 <= snakeEnemy.colision.y) {
+                        snakeEnemy.draw(ctx);
+                    }
+                }
+            });
+            staticObjects.forEach(obj => {
+                if (player.position.x + player.width + 150 >= obj.position.x && player.position.x - 150 <= obj.position.x) {
+                    if (player.position.y + player.height + 150 >= obj.position.y && player.position.y - 150 <= obj.position.y) {
+                        obj.draw(ctx);
+                    }
+                }
+            });
+
+            if (surviveTime >= 60 * (nightCounter - 1) + 15) {
+                IsNightMode = false;
+            }
+        }
+        else {
+            canvas.style.backgroundImage = "url('images/map.png')";
+        }
         //SecondsCounter   mb it can be changed on: setInterval(() => { player.hp -= 5 }, 1000);
         if ((new Date() - secDelta) / 1000 >= 1) {
             player.hp -= 5;
@@ -423,8 +466,8 @@ function gameLoop(timestamp) {
 
 function StartGame() {
     player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);
-    snakeEnemys = [];
-    snakeEnemys.push(new Snake(enemiesImages[0]), new Snake(enemiesImages[0]));
+    snakeEnemies = [];
+    snakeEnemies.push(new Snake(enemiesImages[0]), new Snake(enemiesImages[0]));
 
     staticObjects = [];
     staticObjects.push(new Objects(objectsImages[random(0, objectsImages.length)]),
@@ -438,6 +481,7 @@ function StartGame() {
     topTimeBar.innerHTML = `${topTimeScore} seconds`;
     startGameTime = new Date();
     secDelta = new Date();
+    nightCounter = 1;
     IsGameStarted = true;
 }
 
