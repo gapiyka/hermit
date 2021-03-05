@@ -1,12 +1,14 @@
 ## HERMIT
-[Play Game](https://htmlpreview.github.io/?https://github.com/gapiyka/hermit/blob/main/index.html)
+[Play Game](https://gapiyka.github.io/hermit/)
 
 
 ## GENRE
-Timekiller || Survival
+Indie || Timekiller || Survival || QTE
 
 
 ## About Gameplay
+🦂You play for hermit which try to survive in dangerous desert
+
 📕Easy control of game: | WASD or arrow-buttons to move | SPACE to start game |
 
 📙Player have max value of hp: '100' points, but every second player's hp decrease
@@ -17,7 +19,7 @@ Timekiller || Survival
 
 🧩Game ends if: player`s hp equal zero, or player face with any enemy
 
-🌑Every 60 seconds day change on night, and player sight reduce
+🌑Every 60 seconds day change to night, and player sight reduce
 
 
 ## LICENSE
