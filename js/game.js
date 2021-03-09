@@ -275,10 +275,44 @@ class Objects {
     }
 }
 
+class User {
+    constructor(name, score) {
+        this.name = name;
+        this.score = score;
+    }
+    NewScore() {
+        if (db) {
+            db.transaction((transaction) => {
+                let sqlRequest = `INSERT INTO scores (name, score) VALUES ('${this.name}', '${this.score}')`;
+                transaction.executeSql(sqlRequest);
+            });
+        }
+    }
+    UpdateScore() {
+        if (db) {
+            db.transaction((transaction) => {
+                let sqlRequest = `UPDATE scores SET score=${this.score} WHERE name='${this.name}'`;
+                transaction.executeSql(sqlRequest);
+            });
+        }
+    }
+    LoadTopScore() {
+        if (db) {
+            db.transaction((transaction) => {
+                let sqlRequest = `SELECT * FROM scores WHERE name='${this.name}'`;
+                transaction.executeSql(sqlRequest, undefined, (transaction, result) => {
+                    if (result) topTimeScore = result.rows.item(0).score;
+                });
+            });
+        }
+    }
+}
+
 
 //CONSTS:
 const canvas = document.getElementById("gameScreen");
 const ctx = canvas.getContext("2d");
+const db = window.openDatabase("UsersScores", "1.0", "UsersScores", 42880);
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
 const imghero = document.getElementById("hero");
@@ -287,8 +321,11 @@ const objectsImages = [document.getElementById("rock"), document.getElementById(
 const fruitsImages = [document.getElementById("baobab"), document.getElementById("pumpkin"), document.getElementById("amaranth")];
 
 let player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);;
-let TimeTextBar = document.getElementById('timescore');
-let topTimeBar = document.getElementById('toptimescore');
+let TimeTextBar = document.getElementById("timescore");
+let topTimeBar = document.getElementById("toptimescore");
+let nameInput = document.getElementById("userName");
+let ScorePlaces = [document.getElementById("firstPlace"), document.getElementById("secondPlace"), document.getElementById("thirdPlace"), document.getElementById("fourthPlace"), document.getElementById("fifthPlace"), document.getElementById("sixthPlace"), document.getElementById("seventhPlace"), document.getElementById("eighthPlace"), document.getElementById("ninthPlace"), document.getElementById("tenthPlace")];
+let UserProfile = new User("unknown", 0);
 let snakeEnemies;
 let lastTime = 0;
 let surviveTime = 0;
@@ -301,6 +338,7 @@ let staticObjects = [];
 let fruit;
 let vulture;
 let secDelta;
+let ScoreRating = [];
 
 
 //FUNCTIONS:
@@ -336,6 +374,49 @@ function randomSnakeSpawn(objWidth, objHeight) {//generate spawn position+side o
         }
     ];
     return sides[random(0, 4)];
+}
+
+function CreateTable() {
+    db.transaction((transaction) => {
+        let sqlRequest = "CREATE TABLE scores(name VARCHAR(50), score INT(10))";
+        transaction.executeSql(sqlRequest, undefined);
+    })
+}
+
+function RemoveTable() {
+    db.transaction((transaction) => {
+        let sqlRequest = "DROP TABLE scores";
+        transaction.executeSql(sqlRequest, undefined, () => { console.log("TABLE removed succesfully"); }, () => { console.log("TABLE can`t be removed"); });
+    })
+}
+
+function RemoveRowByName(name) {
+    db.transaction((transaction) => {
+        let sqlRequest = `DELETE FROM scores WHERE name='${name}'`;
+        transaction.executeSql(sqlRequest, undefined, () => { console.log("ROW removed succesfully"); }, () => { console.log("ROW can`t be removed"); });
+    })
+}
+
+function GetDataBase() {
+    let BaseArray = [];
+    let counter = 1;
+    db.transaction((transaction) => {
+        let sqlRequest = "SELECT * FROM scores ORDER BY score DESC";
+        transaction.executeSql(sqlRequest, undefined, (transaction, result) => {
+            if (result.rows.length) {
+                for (let i = 0; i < result.rows.length; i++) {
+                    let row = result.rows.item(i);
+                    BaseArray.push({ name: row.name, score: row.score });
+                    //FILL LEADERBOARD
+                    if (counter <= 10 && row.name != "unknown") {
+                        ScorePlaces[counter - 1].innerHTML = `#${counter} ${row.name.slice(0, 12)} - ${row.score} sec`;
+                        counter++;
+                    }
+                }
+            }
+        }, (transaction, err) => { console.log(err) });
+    });
+    return BaseArray;
 }
 
 function gameLoop(timestamp) {
@@ -400,7 +481,7 @@ function gameLoop(timestamp) {
             }
             else {
                 if (snakeEnemies.indexOf(snakeEnemy) == 1) snakeEnemies.pop();
-                else snakeEnemies.shift();//' snakeEnemy = new Snake(enemiesImages[0]) ' doesn`t work
+                else snakeEnemies.shift();
                 snakeEnemies.push(new Snake(enemiesImages[0]));
             }
         });
@@ -456,7 +537,7 @@ function gameLoop(timestamp) {
     else {
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         player.draw(ctx);
-        ctx.font = `48px serif`;
+        ctx.font = "48px serif";
         ctx.fillStyle = "black";
         ctx.fillText("Press 'Space' to start game", GAME_WIDTH / 6, GAME_HEIGHT / 6);
     }
@@ -468,7 +549,6 @@ function StartGame() {
     player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);
     snakeEnemies = [];
     snakeEnemies.push(new Snake(enemiesImages[0]), new Snake(enemiesImages[0]));
-
     staticObjects = [];
     staticObjects.push(new Objects(objectsImages[random(0, objectsImages.length)]),
         new Objects(objectsImages[random(0, objectsImages.length)]),
@@ -484,6 +564,15 @@ function StartGame() {
     nightCounter = 1;
     IsNightMode = false;
     IsGameStarted = true;
+    if (nameInput.value != "") UserProfile.name = nameInput.value;
+    if (!ScoreRating.some((user) => user.name == UserProfile.name)) {
+        UserProfile.score = 0;
+        UserProfile.NewScore();
+    }
+    if (UserProfile.name != "unknown") {
+        UserProfile.LoadTopScore();
+        topTimeScore = UserProfile.score;
+    }
 }
 
 function Loose() {
@@ -491,10 +580,20 @@ function Loose() {
     //top score check
     if (topTimeScore < surviveTime) {
         topTimeScore = surviveTime;
+        UserProfile.score = topTimeScore;
+        UserProfile.UpdateScore();
+        ScoreRating = GetDataBase();
     }
 }
 
 
 //LAUNCH
 new InputHandler();
+try {
+    CreateTable();
+    ScoreRating = GetDataBase();
+}
+catch (err) {
+    console.log("DATABASE Error:" + err);
+};
 gameLoop();
