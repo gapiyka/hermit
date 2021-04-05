@@ -1,9 +1,9 @@
 ## HERMIT
-[Play Game](https://gapiyka.github.io/hermit/)
+[🕹 Play Game](https://gapiyka.github.io/hermit/)
 
 
 ## GENRE
-Indie || Timekiller || Survival || QTE
+Indie || Timekiller || Survival
 
 
 ## About Gameplay
