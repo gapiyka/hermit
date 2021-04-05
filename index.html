@@ -29,6 +29,19 @@
 			color: #ffffff;
 			text-shadow: 0px 0px 2px black, 0 0 1em black;
 		}
+
+		#rightPanel {
+			position: absolute;
+			top: 15%;
+			left: 80%;
+			padding: 1%;
+			font: 13pt sans-serif;
+			font-weight: 500;
+			color: #ffffff;
+			text-shadow: 0px 0px 2px black, 0 0 1em black;
+			border-radius: 25px;
+			background: rgb(109, 163, 31, 0.5);
+		}
 	</style>
 </head>
 
@@ -52,9 +65,29 @@
 				<br>
 				<p>🏆 Your top Time: 🏆</p>
 				<p id="toptimescore">0 seconds</p>
+				<br>
+				<br>
+				<form>
+					<legend>Input your NickName</legend>
+					<input type="text" id="userName" name="">
+				</form>
 			</div>
 
 			<canvas id="gameScreen" width="800" height="600"></canvas>
+
+			<div id="rightPanel">
+				<p>🥇 LEADER BOARD: 🥇</p>
+				<p id="firstPlace">#1 . . . - 0 seconds</p>
+				<p id="secondPlace">#2 . . . - 0 seconds</p>
+				<p id="thirdPlace">#3 . . . - 0 seconds</p>
+				<p id="fourthPlace">#4 . . . - 0 seconds</p>
+				<p id="fifthPlace">#5 . . . - 0 seconds</p>
+				<p id="sixthPlace">#6 . . . - 0 seconds</p>
+				<p id="seventhPlace">#7 . . . - 0 seconds</p>
+				<p id="eighthPlace">#8 . . . - 0 seconds</p>
+				<p id="ninthPlace">#9 . . . - 0 seconds</p>
+				<p id="tenthPlace">#10 . . . - 0 seconds</p>
+			</div>
 		</div>
 	</div>
 
