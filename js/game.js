@@ -42,24 +42,10 @@ class Player {
     }
 
     draw(ctx) {
-        let modelCut;// x pos for cut image (y = 0 - default)
-        if (this.lookRight && this.lookForward) {
-            modelCut = 0;
-        }
-        else if (!this.lookRight && this.lookForward) {
-            modelCut = 40;
-        }
-        else if (this.lookRight && !this.lookForward) {
-            modelCut = 80;
-        }
-        else if (!this.lookRight && !this.lookForward) {
-            modelCut = 120;
-        }
-        ctx.drawImage(this.image, modelCut, 0, this.width, this.height, this.position.x - this.width / 2, this.position.y, 80, 40);
-        if (this.hp > 50) ctx.fillStyle = "green";
-        else if (this.hp < 25) ctx.fillStyle = "red";
-        else ctx.fillStyle = "yellow";
-        ctx.fillRect(this.position.x, this.position.y - 15, this.hp / 2.5, 10);
+        const mc = ModelCutter(this.lookForward, this.lookRight);// x pos for cut image (y = 0 - default)
+        const xMiddlePos =  this.position.x - this.width / 2;
+        ctx.drawImage(this.image, mc, 0, this.width, this.height, xMiddlePos, this.position.y, 80, 40);
+        HpBarPainter(ctx, this.hp, this.position.x, this.position.y);        
     }
     update(deltaTime) {
         if (!deltaTime) return;
@@ -80,63 +66,11 @@ class Player {
 class InputHandler {
     constructor() {
         document.addEventListener("keydown", event => {//pressed buttons
-            switch (event.keyCode) {
-                case 37://arrow-left
-                    player.moveLeft();
-                    break;
-                case 38://arrow-up
-                    player.moveUp();
-                    break;
-                case 39://arrow-right
-                    player.moveRight();
-                    break;
-                case 40://arrow-down
-                    player.moveDown();
-                    break;
-                case 65://A
-                    player.moveLeft();
-                    break;
-                case 87://W
-                    player.moveUp();
-                    break;
-                case 68://D
-                    player.moveRight();
-                    break;
-                case 83://S
-                    player.moveDown();
-                    break;
-                case 32://space
-                    if (!IsGameStarted) StartGame();
-                    break;
-            }
+            MoveController(player, event.keyCode, true);
+            if (event.keyCode === 32 && !IsGameStarted) StartGame();
         });
         document.addEventListener("keyup", event => {//unpressed buttons
-            switch (event.keyCode) {
-                case 37:
-                    if (player.speed.x < 0) player.stopX();
-                    break;
-                case 38:
-                    if (player.speed.y < 0) player.stopY();
-                    break;
-                case 39:
-                    if (player.speed.x > 0) player.stopX();
-                    break;
-                case 40:
-                    if (player.speed.y > 0) player.stopY();
-                    break;
-                case 65:
-                    if (player.speed.x < 0) player.stopX();
-                    break;
-                case 87:
-                    if (player.speed.y < 0) player.stopY();
-                    break;
-                case 68:
-                    if (player.speed.x > 0) player.stopX();
-                    break;
-                case 83:
-                    if (player.speed.y > 0) player.stopY();
-                    break;
-            }
+            MoveController(player, event.keyCode, false);
         });
     }
 }
@@ -335,7 +269,7 @@ document.getElementById("ninthPlace"), document.getElementById("tenthPlace")];
 
 let player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);
 let UserProfile = new User("unknown", 0);
-let snakeEnemies = [];;
+let snakeEnemies = [];
 let lastTime = 0;
 let surviveTime = 0;
 let topTimeScore = 0;
@@ -389,6 +323,71 @@ function randomObjImage() {
     return new Objects(objectsImages[random(0, objectsImages.length)]);
 }
 
+function PaddleStop(player, key){
+    if(key.axe === "x"){
+        if (player.speed.x < 0 && key.dir === "-") player.stopX();
+        if (player.speed.x > 0 && key.dir === "+") player.stopX();
+    }
+    else {
+        if (player.speed.y < 0 && key.dir === "-") player.stopY();
+        if (player.speed.y > 0 && key.dir === "+") player.stopY();
+    }
+}
+
+function PaddleMove(player, key){
+    if(key.axe === "x"){
+        if (key.dir === "-") player.moveLeft();
+        else player.moveRight();
+    }
+    else {
+        if (key.dir === "-") player.moveUp();
+        else player.moveDown();
+    }
+}
+
+function MoveController(player, keyCode, state){
+    const Keys = [
+        {key: 37, axe: "x", dir: "-"}, {key: 39, axe: "x", dir: "+"}, // 37-arrow left || 39-arrow right
+        {key: 65, axe: "x", dir: "-"}, {key: 68, axe: "x", dir: "+"}, // 65-A || 68-D
+        {key: 38, axe: "y", dir: "-"}, {key: 40, axe: "y", dir: "+"}, // 38-arrow up || 40-arrow down
+        {key: 87, axe: "y", dir: "-"}, {key: 83, axe: "y", dir: "+"}  // 87-W || 83-S
+    ];
+    Keys.map((key) => {
+        if(key.key === keyCode){
+            if(state) PaddleMove(player, key);
+            else PaddleStop(player, key);
+        }
+    });
+}
+
+function ColorHPCheker(hp) {
+    const maxHp = 100;
+    let color;
+    if (hp > (maxHp/2)) color = "green";
+    else if (hp < (maxHp/4)) color = "red";
+    else color = "yellow";
+    return color;
+}
+
+function HpBarPainter(ctx, hp, posX, posY){
+    const barHeight = 10;
+    const barWidth = hp / 2.5;
+    ctx.fillStyle = ColorHPCheker(hp);
+    ctx.fillRect(posX, posY - 15, barWidth, barHeight);
+}
+
+function ModelCutter(lookForward, lookRight){
+    const ModelViews = [
+        {F: true, R: true, cutSize: 0},
+        {F: true, R: false, cutSize: 40},
+        {F: false, R: true, cutSize: 80},
+        {F: false, R: false, cutSize: 120},
+    ];
+    for(let side of ModelViews){
+        if((side.F === lookForward) && (side.R === lookRight)) return side.cutSize;
+    }
+}
+
 function NightDistDraw(player, obj) {
     const distance = 150;
     if (player.position.x + player.width + distance >= obj.position.x && player.position.x - distance <= obj.position.x) {
@@ -399,10 +398,10 @@ function NightDistDraw(player, obj) {
 }
 
 function CollisionCheck(obj1, obj2, func, cut) {
-    let xLeftCheck = obj1.colision.x + obj1.width >= obj2.colision.x + cut && obj1.colision.x + obj1.width <= obj2.colision.x + obj2.width - cut;
-    let xRightCheck = obj1.colision.x <= obj2.colision.x + obj2.width - cut && obj1.colision.x + cut >= obj2.colision.x;
-    let yUpCheck = obj1.colision.y + obj1.height >= obj2.colision.y && obj1.colision.y + obj1.height <= obj2.colision.y + obj2.height;
-    let yBottomCheck = obj1.colision.y <= obj2.colision.y + obj2.height && obj1.colision.y >= obj2.colision.y;
+    const xLeftCheck = obj1.colision.x + obj1.width >= obj2.colision.x + cut && obj1.colision.x + obj1.width <= obj2.colision.x + obj2.width - cut;
+    const xRightCheck = obj1.colision.x <= obj2.colision.x + obj2.width - cut && obj1.colision.x + cut >= obj2.colision.x;
+    const yUpCheck = obj1.colision.y + obj1.height >= obj2.colision.y && obj1.colision.y + obj1.height <= obj2.colision.y + obj2.height;
+    const yBottomCheck = obj1.colision.y <= obj2.colision.y + obj2.height && obj1.colision.y >= obj2.colision.y;
     if (xLeftCheck || xRightCheck) {
         if (yUpCheck || yBottomCheck) {
             func();
@@ -412,21 +411,21 @@ function CollisionCheck(obj1, obj2, func, cut) {
 
 function CreateTable() {
     db.transaction((transaction) => {
-        let sqlRequest = "CREATE TABLE scores(name VARCHAR(50), score INT(10))";
+        const sqlRequest = "CREATE TABLE scores(name VARCHAR(50), score INT(10))";
         transaction.executeSql(sqlRequest, undefined);
     })
 }
 
 function RemoveTable() {
     db.transaction((transaction) => {
-        let sqlRequest = "DROP TABLE scores";
+        const sqlRequest = "DROP TABLE scores";
         transaction.executeSql(sqlRequest, undefined, () => { console.log("TABLE removed succesfully"); }, () => { console.log("TABLE can`t be removed"); });
     })
 }
 
 function RemoveRowByName(name) {
     db.transaction((transaction) => {
-        let sqlRequest = `DELETE FROM scores WHERE name='${name}'`;
+        const sqlRequest = `DELETE FROM scores WHERE name='${name}'`;
         transaction.executeSql(sqlRequest, undefined, () => { console.log("ROW removed succesfully"); }, () => { console.log("ROW can`t be removed"); });
     })
 }
@@ -434,16 +433,18 @@ function RemoveRowByName(name) {
 function GetDataBase() {
     let BaseArray = [];
     let counter = 1;
+    const numOfLeaders = 10;
+    const maxNameLength = 12;
     db.transaction((transaction) => {
-        let sqlRequest = "SELECT * FROM scores ORDER BY score DESC";
+        const sqlRequest = "SELECT * FROM scores ORDER BY score DESC";
         transaction.executeSql(sqlRequest, undefined, (transaction, result) => {
             if (result.rows.length) {
                 for (let i = 0; i < result.rows.length; i++) {
                     let row = result.rows.item(i);
                     BaseArray.push({ name: row.name, score: row.score });
                     //FILL LEADERBOARD
-                    if (counter <= 10 && row.name !== "unknown") {
-                        ScorePlaces[counter - 1].innerHTML = `#${counter} ${row.name.slice(0, 12)} - ${row.score} sec`;
+                    if (counter <= numOfLeaders && row.name !== "unknown") {
+                        ScorePlaces[counter - 1].innerHTML = `#${counter} ${row.name.slice(0, maxNameLength)} - ${row.score} sec`;
                         counter++;
                     }
                 }
@@ -454,6 +455,18 @@ function GetDataBase() {
 }
 
 function gameLoop(timestamp) {
+    const textFont = "48px serif";
+    const blackStyle = "black";
+    const maxHp = 100;
+    const healPoints = 10;
+    const damagePoints = 5;
+    const minBorder = 60;
+    const msDivine = 1000;
+    const bgZone = 100;
+    const urlBG = {
+        day: "url('images/map.png')",
+        night: "url('images/map_night.png')"
+    };
     if (IsGameStarted) {
         let deltaTime = timestamp - lastTime;
         lastTime = timestamp;
@@ -461,13 +474,13 @@ function gameLoop(timestamp) {
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         player.update(deltaTime);
 
-        surviveTime = Math.floor((new Date() - startGameTime) / 1000);
+        surviveTime = Math.floor((new Date() - startGameTime) / msDivine);
         TimeTextBar.innerHTML = `${surviveTime} seconds`;
         fruit.draw(ctx);
         CollisionCheck(player, fruit, () => {
             fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
-            player.hp += 10;
-            if (player.hp > 100) player.hp = 100;
+            player.hp += healPoints;
+            if (player.hp > maxHp) player.hp = maxHp;
         }, 0);
         CollisionCheck(player, vulture, () => { Loose(); }, 0);
 
@@ -488,7 +501,7 @@ function gameLoop(timestamp) {
         player.draw(ctx);
         snakeEnemies.forEach(snakeEnemy => {
             //check on existing in borders
-            if ((snakeEnemy.position.x > -100 && snakeEnemy.position.x < GAME_WIDTH + 100) && (snakeEnemy.position.y > -100 && snakeEnemy.position.y < GAME_HEIGHT + 100)) {
+            if ((snakeEnemy.position.x > -bgZone && snakeEnemy.position.x < GAME_WIDTH + bgZone) && (snakeEnemy.position.y > -bgZone && snakeEnemy.position.y < GAME_HEIGHT + bgZone)) {
                 snakeEnemy.update(deltaTime);
                 snakeEnemy.draw(ctx);
                 CollisionCheck(player, snakeEnemy, () => { Loose(); }, 0);
@@ -502,12 +515,12 @@ function gameLoop(timestamp) {
         vulture.draw(ctx);
         vulture.update(ctx);
         //NIGHTMODE
-        if (surviveTime >= 60 * nightCounter) {
+        if (surviveTime >= minBorder * nightCounter) {
             IsNightMode = true;
             nightCounter++;
         }
         if (IsNightMode) {
-            canvas.style.backgroundImage = "url('images/map_night.png')";
+            canvas.style.backgroundImage = urlBG.night;
             ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
             player.draw(ctx);
             NightDistDraw(player, fruit);
@@ -519,24 +532,24 @@ function gameLoop(timestamp) {
                 NightDistDraw(player, obj)
             });
 
-            if (surviveTime >= 60 * (nightCounter - 1) + 15) {
+            if (surviveTime >= minBorder * (nightCounter - 1) + 15) {
                 IsNightMode = false;
             }
         }
         else {
-            canvas.style.backgroundImage = "url('images/map.png')";
+            canvas.style.backgroundImage = urlBG.day;
         }
         //SecondsCounter   mb it can be changed on: setInterval(() => { player.hp -= 5 }, 1000);
-        if ((new Date() - secDelta) / 1000 >= 1) {
-            player.hp -= 5;
+        if ((new Date() - secDelta) / msDivine >= 1) {
+            player.hp -= damagePoints;
             secDelta = new Date();
         }
     }
     else {
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         player.draw(ctx);
-        ctx.font = "48px serif";
-        ctx.fillStyle = "black";
+        ctx.font = textFont;
+        ctx.fillStyle = blackStyle;
         ctx.fillText("Press 'Space' to start game", GAME_WIDTH / 6, GAME_HEIGHT / 6);
     }
 

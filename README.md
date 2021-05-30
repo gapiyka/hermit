@@ -1,12 +1,14 @@
 ## HERMIT
+
+KPI Sikorsky coursework
 [🕹 Play Game](https://gapiyka.github.io/hermit/)
 
-
 ## GENRE
+
 Indie || Timekiller || Survival
 
-
 ## About Gameplay
+
 🦂You play for hermit which try to survive in dangerous desert
 
 📕Easy control of game: | WASD or arrow-buttons to move | SPACE to start game |
@@ -21,6 +23,6 @@ Indie || Timekiller || Survival
 
 🌑Every 60 seconds day change to night, and player sight reduce
 
-
 ## LICENSE
+
 [MIT License](https://github.com/gapiyka/hermit/blob/main/LICENSE)
