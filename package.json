@@ -1,0 +1,26 @@
+{
+  "name": "hermit",
+  "version": "1.0.0",
+  "description": "Web Game for a KPI Sikorsky coursework",
+  "main": "game.js",
+  "scripts": {
+    "lint": "eslint . --fix && prettier --write \"**/*.js\" \"**/*.json\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gapiyka/hermit.git"
+  },
+  "keywords": [
+    "WebGame"
+  ],
+  "author": "gapiyka <gapiy.denis@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gapiyka/hermit/issues"
+  },
+  "homepage": "https://github.com/gapiyka/hermit#readme",
+  "dependencies": {
+    "eslint": "^7.27.0",
+    "prettier": "^2.3.0"
+  }
+}
