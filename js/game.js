@@ -182,36 +182,12 @@ class Snake extends Enemy {
       x: this.spawn.x,
       y: this.spawn.y,
     };
-    switch (this.side) {
-      case 'top':
-        this.speed.y = this.maxSpeed;
-        this.colision = {
-          x: this.position.x - this.width,
-          y: this.position.y - this.height,
-        };
-        break;
-      case 'right':
-        this.speed.x = -this.maxSpeed;
-        this.colision = {
-          x: this.position.x,
-          y: this.position.y - this.height,
-        };
-        break;
-      case 'bottom':
-        this.speed.y = -this.maxSpeed;
-        this.colision = {
-          x: this.position.x,
-          y: this.position.y,
-        };
-        break;
-      case 'left':
-        this.speed.x = this.maxSpeed;
-        this.colision = {
-          x: this.position.x - this.width,
-          y: this.position.y,
-        };
-        break;
-    }
+    this.speed.x = this.maxSpeed * this.spawn.speed.x;
+    this.speed.y = this.maxSpeed * this.spawn.speed.y;
+    this.colision = {
+      x: this.position.x + this.spawn.collision.width * this.width,
+      y: this.position.y + this.spawn.collision.height * this.height,
+    };
   }
 }
 
@@ -329,6 +305,9 @@ function random(min, max) {
 
 function randomSnakeSpawn(objWidth, objHeight) {
   //generate spawn position+side of enemy(snake)
+  const numIncrease = 1;
+  const numReduce = -1;
+  const numStatic = 0;
   const sides = [
     //0-top 1-right 2-bottom 3-left
     {
@@ -336,24 +315,56 @@ function randomSnakeSpawn(objWidth, objHeight) {
       x: random(objWidth, gameWidth - objWidth),
       y: startPos,
       degree: 180,
+      speed: {
+        x: numStatic,
+        y: numIncrease
+      },
+      collision: {
+        width: numReduce,
+        height: numReduce
+      }
     },
     {
       side: 'right',
       x: gameWidth,
       y: random(objHeight, gameHeight - objHeight),
       degree: 270,
+      speed: {
+        x: numReduce,
+        y: numStatic
+      },
+      collision: {
+        width: numStatic,
+        height: numReduce
+      }
     },
     {
       side: 'bottom',
       x: random(objWidth, gameWidth - objWidth),
       y: gameHeight,
       degree: 0,
+      speed: {
+        x: numStatic,
+        y: numReduce
+      },
+      collision: {
+        width: numStatic,
+        height: numStatic
+      }
     },
     {
       side: 'left',
       x: startPos,
       y: random(objHeight, gameHeight - objHeight),
       degree: 90,
+      speed: {
+        x: numIncrease,
+        y: numStatic
+      },
+      collision: {
+        width: numReduce,
+        height: numStatic
+      }
     },
   ];
   return sides[random(0, 4)];
