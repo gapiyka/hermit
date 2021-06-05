@@ -4,8 +4,11 @@
 const canvas = document.getElementById('gameScreen');
 const ctx = canvas.getContext('2d');
 const db = window.openDatabase('UsersScores', '1.0', 'UsersScores', 42880);
-const GAME_WIDTH = 800;
-const GAME_HEIGHT = 600;
+const gameWidth = 800;
+const gameHeight = 600;
+const startPos = 0;
+const defaultParam = 0;
+const defaultObjSize = 40;
 const imghero = document.getElementById('hero');
 const enemiesImages = [
   document.getElementById('snake'),
@@ -21,10 +24,10 @@ const fruitsImages = [
   document.getElementById('pumpkin'),
   document.getElementById('amaranth'),
 ];
-const TimeTextBar = document.getElementById('timescore');
+const timeTextBar = document.getElementById('timescore');
 const topTimeBar = document.getElementById('toptimescore');
 const nameInput = document.getElementById('userName');
-const ScorePlaces = [
+const scorePlaces = [
   document.getElementById('firstPlace'),
   document.getElementById('secondPlace'),
   document.getElementById('thirdPlace'),
@@ -40,11 +43,11 @@ const ScorePlaces = [
 //CLASES:
 class Player {
   constructor(gameWidth, gameHeight, image) {
-    this.width = 40;
-    this.height = 40;
+    this.width = defaultObjSize;
+    this.height = defaultObjSize;
     this.image = image;
     this.maxSpeed = 3;
-    this.speed = { x: 0, y: 0 };
+    this.speed = { x: defaultParam, y: defaultParam };
     this.position = {
       x: gameWidth / 2 - this.width / 2,
       y: gameHeight - this.height - 10,
@@ -71,15 +74,17 @@ class Player {
     this.lookForward = false;
   }
   stopX() {
-    this.speed.x = 0;
+    this.speed.x = defaultParam;
   }
   stopY() {
-    this.speed.y = 0;
+    this.speed.y = defaultParam;
   }
 
   draw(ctx) {
-    const mc = ModelCutter(this.lookForward, this.lookRight); // x pos for cut image (y = 0 - default)
+    const mc = modelCutter(this.lookForward, this.lookRight); // x pos for cut image (y = 0 - default)
     const xMiddlePos = this.position.x - this.width / 2;
+    const imageCutWidth = defaultObjSize * 2;
+    const imageCutHeight = defaultObjSize;
     ctx.drawImage(
       this.image,
       mc,
@@ -88,55 +93,55 @@ class Player {
       this.height,
       xMiddlePos,
       this.position.y,
-      80,
-      40
+      imageCutWidth,
+      imageCutHeight
     );
-    HpBarPainter(ctx, this.hp, this.position.x, this.position.y);
+    hpBarPainter(ctx, this.hp, this.position.x, this.position.y);
   }
   update(deltaTime) {
     if (!deltaTime) return;
     this.position.x += this.speed.x;
     this.position.y += this.speed.y;
-    if (this.position.x < 0) this.position.x = 0;
-    else if (this.position.x > GAME_WIDTH - this.width)
-      this.position.x = GAME_WIDTH - this.width;
+    if (this.position.x < startPos) this.position.x = startPos;
+    else if (this.position.x > gameWidth - this.width)
+      this.position.x = gameWidth - this.width;
 
-    if (this.position.y < 0) this.position.y = 0;
-    else if (this.position.y > GAME_HEIGHT - this.height)
-      this.position.y = GAME_HEIGHT - this.height;
+    if (this.position.y < startPos) this.position.y = startPos;
+    else if (this.position.y > gameHeight - this.height)
+      this.position.y = gameHeight - this.height;
 
-    if (this.hp <= 0) Loose();
+    if (this.hp <= 0) loose();
 
     this.colision = this.position;
   }
 }
 
 //MUTABLE GLOBAL SCOPE
-let player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);
+let player = new Player(gameWidth, gameHeight, imghero);
 let snakeEnemies = [];
 let lastTime = 0;
 let surviveTime = 0;
 let topTimeScore = 0;
 let startGameTime;
-let IsGameStarted = false;
-let IsNightMode = false;
+let isGameStarted = false;
+let isNightMode = false;
 let nightCounter;
 let staticObjects = [];
 let fruit;
 let vulture;
 let secDelta;
-let ScoreRating = [];
+let scoreRating = [];
 
 class InputHandler {
   constructor() {
     document.addEventListener('keydown', (event) => {
       //pressed buttons
-      MoveController(player, event.keyCode, true);
-      if (event.keyCode === 32 && !IsGameStarted) StartGame();
+      moveController(player, event.keyCode, true);
+      if (event.keyCode === 32 && !isGameStarted) startGame();
     });
     document.addEventListener('keyup', (event) => {
       //unpressed buttons
-      MoveController(player, event.keyCode, false);
+      moveController(player, event.keyCode, false);
     });
   }
 }
@@ -145,17 +150,17 @@ class Enemy {
   constructor(image) {
     this.name = this.__proto__.constructor.name;
     this.image = image;
-    this.width = 40;
-    this.height = 40;
+    this.width = defaultObjSize;
+    this.height = defaultObjSize;
     this.maxSpeed = 3;
-    this.speed = { x: 0, y: 0 };
+    this.speed = { x: defaultParam, y: defaultParam };
     this.colision = {};
   }
 
   draw(ctx) {
     ctx.translate(this.position.x, this.position.y); //move system to spawn position
     ctx.rotate((this.degree * Math.PI) / 180); //rotate system
-    ctx.drawImage(this.image, 0, 0, this.width, this.height); //draw enemy
+    ctx.drawImage(this.image, startPos, startPos, this.width, this.height); //draw enemy
     ctx.setTransform(1, 0, 0, 1, 0, 0); //make a system transofrm by default
   }
   update(deltaTime) {
@@ -215,8 +220,8 @@ class Vulture extends Enemy {
     super(image);
     this.maxSpeed = 1;
     this.position = {
-      x: random(this.width, GAME_WIDTH - this.width),
-      y: random(this.height, GAME_HEIGHT - this.height),
+      x: random(this.width, gameWidth - this.width),
+      y: random(this.height, gameHeight - this.height),
     };
     this.speed = { x: 1, y: 1 };
     this.degree = 90;
@@ -249,10 +254,10 @@ class Vulture extends Enemy {
       };
     }
     //borders check
-    if (this.colision.x > GAME_WIDTH || this.colision.x < -this.height) {
+    if (this.colision.x > gameWidth || this.colision.x < -this.height) {
       this.speed.x = -this.speed.x;
     }
-    if (this.colision.y > GAME_HEIGHT || this.colision.y < -this.width) {
+    if (this.colision.y > gameHeight || this.colision.y < -this.width) {
       this.speed.y = -this.speed.y;
     }
 
@@ -263,11 +268,11 @@ class Vulture extends Enemy {
 class Objects {
   constructor(image) {
     this.image = image;
-    this.width = 40;
-    this.height = 40;
+    this.width = defaultObjSize;
+    this.height = defaultObjSize;
     this.position = {
-      x: random(0, GAME_WIDTH - this.width),
-      y: random(0, GAME_HEIGHT - this.height),
+      x: random(startPos, gameWidth - this.width),
+      y: random(startPos, gameHeight - this.height),
     };
     this.colision = this.position;
   }
@@ -287,7 +292,7 @@ class User {
     this.name = name;
     this.score = score;
   }
-  NewScore() {
+  newScore() {
     if (db) {
       db.transaction((transaction) => {
         const sqlRequest = `INSERT INTO scores (name, score) VALUES ('${this.name}', '${this.score}')`;
@@ -295,7 +300,7 @@ class User {
       });
     }
   }
-  UpdateScore() {
+  updateScore() {
     if (db) {
       db.transaction((transaction) => {
         const sqlRequest = `UPDATE scores SET score=${this.score} WHERE name='${this.name}'`;
@@ -303,7 +308,7 @@ class User {
       });
     }
   }
-  LoadTopScore() {
+  loadTopScore() {
     if (db) {
       db.transaction((transaction) => {
         const sqlRequest = `SELECT * FROM scores WHERE name='${this.name}'`;
@@ -315,7 +320,7 @@ class User {
   }
 }
 
-const UserProfile = new User('unknown', 0);
+const userProfile = new User('unknown', defaultParam);
 
 //FUNCTIONS:
 function random(min, max) {
@@ -328,26 +333,26 @@ function randomSnakeSpawn(objWidth, objHeight) {
     //0-top 1-right 2-bottom 3-left
     {
       side: 'top',
-      x: random(objWidth, GAME_WIDTH - objWidth),
-      y: 0,
+      x: random(objWidth, gameWidth - objWidth),
+      y: startPos,
       degree: 180,
     },
     {
       side: 'right',
-      x: GAME_WIDTH,
-      y: random(objHeight, GAME_HEIGHT - objHeight),
+      x: gameWidth,
+      y: random(objHeight, gameHeight - objHeight),
       degree: 270,
     },
     {
       side: 'bottom',
-      x: random(objWidth, GAME_WIDTH - objWidth),
-      y: GAME_HEIGHT,
+      x: random(objWidth, gameWidth - objWidth),
+      y: gameHeight,
       degree: 0,
     },
     {
       side: 'left',
-      x: 0,
-      y: random(objHeight, GAME_HEIGHT - objHeight),
+      x: startPos,
+      y: random(objHeight, gameHeight - objHeight),
       degree: 90,
     },
   ];
@@ -358,7 +363,7 @@ function randomObjImage() {
   return new Objects(objectsImages[random(0, objectsImages.length)]);
 }
 
-function PaddleStop(player, key) {
+function paddleStop(player, key) {
   if (key.axe === 'x') {
     if (player.speed.x < 0 && key.dir === '-') player.stopX();
     if (player.speed.x > 0 && key.dir === '+') player.stopX();
@@ -368,7 +373,7 @@ function PaddleStop(player, key) {
   }
 }
 
-function PaddleMove(player, key) {
+function paddleMove(player, key) {
   if (key.axe === 'x') {
     if (key.dir === '-') player.moveLeft();
     else player.moveRight();
@@ -376,7 +381,7 @@ function PaddleMove(player, key) {
   else player.moveDown();
 }
 
-function MoveController(player, keyCode, state) {
+function moveController(player, keyCode, state) {
   const Keys = [
     { key: 37, axe: 'x', dir: '-' },
     { key: 39, axe: 'x', dir: '+' }, // 37-arrow left || 39-arrow right
@@ -389,41 +394,44 @@ function MoveController(player, keyCode, state) {
   ];
   Keys.map((key) => {
     if (key.key === keyCode) {
-      if (state) PaddleMove(player, key);
-      else PaddleStop(player, key);
+      if (state) paddleMove(player, key);
+      else paddleStop(player, key);
     }
   });
 }
 
-function ColorHPCheker(hp) {
+function colorHPCheker(hp) {
   const maxHp = 100;
+  const halfHp = maxHp / 2;
+  const quarterHp = maxHp / 4;
   let color;
-  if (hp > maxHp / 2) color = 'green';
-  else if (hp < maxHp / 4) color = 'red';
+  if (hp > halfHp) color = 'green';
+  else if (hp < quarterHp) color = 'red';
   else color = 'yellow';
   return color;
 }
 
-function HpBarPainter(ctx, hp, posX, posY) {
+function hpBarPainter(ctx, hp, posX, posY) {
   const barHeight = 10;
+  const distToBar = 15;
   const barWidth = hp / 2.5;
-  ctx.fillStyle = ColorHPCheker(hp);
-  ctx.fillRect(posX, posY - 15, barWidth, barHeight);
+  ctx.fillStyle = colorHPCheker(hp);
+  ctx.fillRect(posX, posY - distToBar, barWidth, barHeight);
 }
 
-function ModelCutter(lookForward, lookRight) {
-  const ModelViews = [
+function modelCutter(lookForward, lookRight) {
+  const modelViews = [
     { F: true, R: true, cutSize: 0 },
     { F: true, R: false, cutSize: 40 },
     { F: false, R: true, cutSize: 80 },
     { F: false, R: false, cutSize: 120 },
   ];
-  for (const side of ModelViews) {
+  for (const side of modelViews) {
     if (side.F === lookForward && side.R === lookRight) return side.cutSize;
   }
 }
 
-function NightDistDraw(player, obj) {
+function nightDistDraw(player, obj) {
   const distance = 150;
   if (
     player.position.x + player.width + distance >= obj.position.x &&
@@ -438,7 +446,7 @@ function NightDistDraw(player, obj) {
   }
 }
 
-function CollisionCheck(obj1, obj2, func, cut) {
+function collisionCheck(obj1, obj2, func, cut) {
   const xLeftCheck =
     obj1.colision.x + obj1.width >= obj2.colision.x + cut &&
     obj1.colision.x + obj1.width <= obj2.colision.x + obj2.width - cut;
@@ -458,14 +466,14 @@ function CollisionCheck(obj1, obj2, func, cut) {
   }
 }
 
-function CreateTable() {
+function createTable() {
   db.transaction((transaction) => {
     const sqlRequest = 'CREATE TABLE scores(name VARCHAR(50), score INT(10))';
     transaction.executeSql(sqlRequest, undefined);
   });
 }
 
-/*function RemoveTable() {
+/*function removeTable() {
   db.transaction((transaction) => {
     const sqlRequest = 'DROP TABLE scores';
     transaction.executeSql(
@@ -481,7 +489,7 @@ function CreateTable() {
   });
 }
 
-function RemoveRowByName(name) {
+function removeRowByName(name) {
   db.transaction((transaction) => {
     const sqlRequest = `DELETE FROM scores WHERE name='${name}'`;
     transaction.executeSql(
@@ -497,8 +505,8 @@ function RemoveRowByName(name) {
   });
 }*/
 
-function GetDataBase() {
-  const BaseArray = [];
+function getDataBase() {
+  const baseArray = [];
   let counter = 1;
   const numOfLeaders = 10;
   const maxNameLength = 12;
@@ -511,10 +519,10 @@ function GetDataBase() {
         if (result.rows.length) {
           for (let i = 0; i < result.rows.length; i++) {
             const row = result.rows.item(i);
-            BaseArray.push({ name: row.name, score: row.score });
+            baseArray.push({ name: row.name, score: row.score });
             //FILL LEADERBOARD
             if (counter <= numOfLeaders && row.name !== 'unknown') {
-              ScorePlaces[
+              scorePlaces[
                 counter - 1
               ].innerHTML = `#${counter} ${row.name.slice(
                 0,
@@ -530,149 +538,195 @@ function GetDataBase() {
       }
     );
   });
-  return BaseArray;
+  return baseArray;
 }
 
-function gameLoop(timestamp) {
-  const textFont = '48px serif';
-  const blackStyle = 'black';
-  const maxHp = 100;
-  const healPoints = 10;
+function playerDamage(msDivine) {
   const damagePoints = 5;
+
+  if ((new Date() - secDelta) / msDivine >= 1) {
+    player.hp -= damagePoints;
+    secDelta = new Date();
+  }
+}
+
+function timeScaner(timestamp, msDivine) {
+  const deltaTime = timestamp - lastTime;
+  lastTime = timestamp;
+  surviveTime = Math.floor((new Date() - startGameTime) / msDivine);
+  timeTextBar.innerHTML = `${surviveTime} seconds`;
+  return deltaTime;
+}
+
+function nightMode() {
   const minBorder = 60;
-  const msDivine = 1000;
-  const bgZone = 100;
+  const changeDelay = 15;
   const urlBG = {
     day: 'url("images/map.png")',
     night: 'url("images/map_night.png")',
   };
-  if (IsGameStarted) {
-    const deltaTime = timestamp - lastTime;
-    lastTime = timestamp;
 
-    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    player.update(deltaTime);
-
-    surviveTime = Math.floor((new Date() - startGameTime) / msDivine);
-    TimeTextBar.innerHTML = `${surviveTime} seconds`;
-    fruit.draw(ctx);
-    CollisionCheck(
-      player,
-      fruit,
-      () => {
-        fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
-        player.hp += healPoints;
-        if (player.hp > maxHp) player.hp = maxHp;
-      },
-      0
-    );
-    CollisionCheck(
-      player,
-      vulture,
-      () => {
-        Loose();
-      },
-      0
-    );
-
-    staticObjects.forEach((obj) => {
-      obj.draw(ctx);
-      CollisionCheck(
-        player,
-        obj,
-        () => {
-          player.position.x -= player.speed.x;
-          player.position.y -= player.speed.y;
-        },
-        15
-      );
-      snakeEnemies.forEach((snakeEnemy) => {
-        CollisionCheck(
-          snakeEnemy,
-          obj,
-          () => {
-            if (snakeEnemies.indexOf(snakeEnemy) === 1) snakeEnemies.pop();
-            else snakeEnemies.shift(); //' snakeEnemy = new Snake(enemiesImages[0]) ' doesn`t work
-            snakeEnemies.push(new Snake(enemiesImages[0]));
-          },
-          0
-        );
-      });
-    });
+  if (surviveTime >= minBorder * nightCounter) {
+    isNightMode = true;
+    nightCounter++;
+  }
+  if (isNightMode) {
+    canvas.style.backgroundImage = urlBG.night;
+    ctx.clearRect(startPos, startPos, gameWidth, gameHeight);
     player.draw(ctx);
+    nightDistDraw(player, fruit);
+    nightDistDraw(player, vulture);
     snakeEnemies.forEach((snakeEnemy) => {
-      //check on existing in borders
-      if (
-        snakeEnemy.position.x > -bgZone &&
-        snakeEnemy.position.x < GAME_WIDTH + bgZone &&
-        snakeEnemy.position.y > -bgZone &&
-        snakeEnemy.position.y < GAME_HEIGHT + bgZone
-      ) {
-        snakeEnemy.update(deltaTime);
-        snakeEnemy.draw(ctx);
-        CollisionCheck(
-          player,
-          snakeEnemy,
-          () => {
-            Loose();
-          },
-          0
-        );
-      } else {
-        if (snakeEnemies.indexOf(snakeEnemy) === 1) snakeEnemies.pop();
-        else snakeEnemies.shift();
-        snakeEnemies.push(new Snake(enemiesImages[0]));
-      }
+      nightDistDraw(player, snakeEnemy);
     });
-    vulture.draw(ctx);
-    vulture.update(ctx);
-    //NIGHTMODE
-    if (surviveTime >= minBorder * nightCounter) {
-      IsNightMode = true;
-      nightCounter++;
-    }
-    if (IsNightMode) {
-      canvas.style.backgroundImage = urlBG.night;
-      ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-      player.draw(ctx);
-      NightDistDraw(player, fruit);
-      NightDistDraw(player, vulture);
-      snakeEnemies.forEach((snakeEnemy) => {
-        NightDistDraw(player, snakeEnemy);
-      });
-      staticObjects.forEach((obj) => {
-        NightDistDraw(player, obj);
-      });
+    staticObjects.forEach((obj) => {
+      nightDistDraw(player, obj);
+    });
 
-      if (surviveTime >= minBorder * (nightCounter - 1) + 15) {
-        IsNightMode = false;
-      }
-    } else {
-      canvas.style.backgroundImage = urlBG.day;
-    }
-    //SecondsCounter   mb it can be changed on: setInterval(() => { player.hp -= 5 }, 1000);
-    if ((new Date() - secDelta) / msDivine >= 1) {
-      player.hp -= damagePoints;
-      secDelta = new Date();
+    if (surviveTime >= minBorder * (nightCounter - 1) + changeDelay) {
+      isNightMode = false;
     }
   } else {
-    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    player.draw(ctx);
-    ctx.font = textFont;
-    ctx.fillStyle = blackStyle;
-    ctx.fillText(
-      'Press "Space" to start game',
-      GAME_WIDTH / 6,
-      GAME_HEIGHT / 6
+    canvas.style.backgroundImage = urlBG.day;
+  }
+}
+
+function pauseUI() {
+  const textFont = '48px serif';
+  const blackStyle = 'black';
+  const textDivine = 6;
+
+  ctx.clearRect(startPos, startPos, gameWidth, gameHeight);
+  player.draw(ctx);
+  ctx.font = textFont;
+  ctx.fillStyle = blackStyle;
+  ctx.fillText(
+    'Press "Space" to start game',
+    gameWidth / textDivine,
+    gameHeight / textDivine
+  );
+}
+
+function collisionDetectioner() {
+  const maxHp = 100;
+  const healPoints = 10;
+  const defaultColBox = 0;
+  const objColBox = 15;
+
+  collisionCheck(
+    player,
+    fruit,
+    () => {
+      fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
+      player.hp += healPoints;
+      if (player.hp > maxHp) player.hp = maxHp;
+    },
+    defaultColBox
+  );
+  collisionCheck(
+    player,
+    vulture,
+    () => {
+      loose();
+    },
+    defaultColBox
+  );
+  staticObjects.forEach((obj) => {
+    obj.draw(ctx);
+    collisionCheck(
+      player,
+      obj,
+      () => {
+        player.position.x -= player.speed.x;
+        player.position.y -= player.speed.y;
+      },
+      objColBox
     );
+    snakeEnemies.forEach((snakeEnemy) => {
+      collisionCheck(
+        snakeEnemy,
+        obj,
+        () => {
+          if (snakeEnemies.indexOf(snakeEnemy) === 1) snakeEnemies.pop();
+          else snakeEnemies.shift();
+          snakeEnemies.push(new Snake(enemiesImages[0]));
+        },
+        defaultColBox
+      );
+    });
+  });
+}
+
+function checkSnakeOutOfBounds(snakeEnemy, deltaTime) {
+  const bgZone = 100;
+
+  if (
+    snakeEnemy.position.x > -bgZone &&
+    snakeEnemy.position.x < gameWidth + bgZone &&
+    snakeEnemy.position.y > -bgZone &&
+    snakeEnemy.position.y < gameHeight + bgZone
+  ) {
+    snakeEnemy.update(deltaTime);
+    snakeEnemy.draw(ctx);
+    collisionCheck(
+      player,
+      snakeEnemy,
+      () => {
+        loose();
+      },
+      0
+    );
+  } else {
+    if (snakeEnemies.indexOf(snakeEnemy) === 1) snakeEnemies.pop();
+    else snakeEnemies.shift();
+    snakeEnemies.push(new Snake(enemiesImages[0]));
+  }
+}
+
+function userScoreUpdate() {
+  nameInput.readOnly = true;
+  topTimeBar.innerHTML = `${topTimeScore} seconds`;
+  if (nameInput.value !== '') userProfile.name = nameInput.value;
+  if (!scoreRating.some((user) => user.name === userProfile.name)) {
+    userProfile.score = 0;
+    userProfile.newScore();
+  }
+  if (userProfile.name !== 'unknown') {
+    userProfile.loadTopScore();
+    topTimeScore = userProfile.score;
+  }
+}
+
+function gameLoop(timestamp) {
+  const msDivine = 1000;
+  if (isGameStarted) {
+    const deltaTime = timeScaner(timestamp, msDivine);
+
+    ctx.clearRect(startPos, startPos, gameWidth, gameHeight);
+    player.update(deltaTime);
+    vulture.update(ctx);
+
+    collisionDetectioner();
+
+    snakeEnemies.forEach((snakeEnemy) => {
+      checkSnakeOutOfBounds(snakeEnemy, deltaTime);
+    });
+
+    player.draw(ctx);
+    vulture.draw(ctx);
+    fruit.draw(ctx);
+
+    nightMode();
+    playerDamage(msDivine);
+  } else {
+    pauseUI();
   }
 
   requestAnimationFrame(gameLoop); //https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
 }
 
-function StartGame() {
-  nameInput.readOnly = true;
-  player = new Player(GAME_WIDTH, GAME_HEIGHT, imghero);
+function startGame() {
+  player = new Player(gameWidth, gameHeight, imghero);
   snakeEnemies = [];
   snakeEnemies.push(new Snake(enemiesImages[0]), new Snake(enemiesImages[0]));
   staticObjects = [];
@@ -686,40 +740,31 @@ function StartGame() {
   );
   vulture = new Vulture(enemiesImages[1]);
   fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
-  topTimeBar.innerHTML = `${topTimeScore} seconds`;
   startGameTime = new Date();
   secDelta = new Date();
   nightCounter = 1;
-  IsNightMode = false;
-  IsGameStarted = true;
-  if (nameInput.value !== '') UserProfile.name = nameInput.value;
-  if (!ScoreRating.some((user) => user.name === UserProfile.name)) {
-    UserProfile.score = 0;
-    UserProfile.NewScore();
-  }
-  if (UserProfile.name !== 'unknown') {
-    UserProfile.LoadTopScore();
-    topTimeScore = UserProfile.score;
-  }
+  isNightMode = false;
+  isGameStarted = true;
+  userScoreUpdate();
 }
 
-function Loose() {
-  IsGameStarted = false;
+function loose() {
+  isGameStarted = false;
   nameInput.readOnly = false;
   //top score check
   if (topTimeScore < surviveTime) {
     topTimeScore = surviveTime;
-    UserProfile.score = topTimeScore;
-    UserProfile.UpdateScore();
-    ScoreRating = GetDataBase();
+    userProfile.score = topTimeScore;
+    userProfile.updateScore();
+    scoreRating = getDataBase();
   }
 }
 
 //LAUNCH
 new InputHandler();
 try {
-  CreateTable();
-  ScoreRating = GetDataBase();
+  createTable();
+  scoreRating = getDataBase();
 } catch (err) {
   console.log('DATABASE Error:' + err);
 }
