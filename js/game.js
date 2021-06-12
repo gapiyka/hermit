@@ -43,6 +43,7 @@ const scorePlaces = [
 //CLASES:
 class Player {
   constructor(gameWidth, gameHeight, image) {
+    const bottomPadle = 10;
     this.width = defaultObjSize;
     this.height = defaultObjSize;
     this.image = image;
@@ -50,12 +51,12 @@ class Player {
     this.speed = { x: defaultParam, y: defaultParam };
     this.position = {
       x: gameWidth / 2 - this.width / 2,
-      y: gameHeight - this.height - 10,
+      y: gameHeight - this.height - bottomPadle,
     };
     this.colision = this.position;
     this.lookForward = true;
     this.lookRight = true;
-    this.hp = 100;
+    this.healthPoints = 100;
   }
   moveLeft() {
     this.speed.x = -this.maxSpeed;
@@ -96,7 +97,7 @@ class Player {
       imageCutWidth,
       imageCutHeight
     );
-    hpBarPainter(ctx, this.hp, this.position.x, this.position.y);
+    hpBarPainter(ctx, this.healthPoints, this.position.x, this.position.y);
   }
   update(deltaTime) {
     if (!deltaTime) return;
@@ -110,7 +111,7 @@ class Player {
     else if (this.position.y > gameHeight - this.height)
       this.position.y = gameHeight - this.height;
 
-    if (this.hp <= 0) loose();
+    if (this.healthPoints <= 0) loose();
 
     this.colision = this.position;
   }
@@ -375,7 +376,7 @@ function randomObjImage() {
 }
 
 function paddleStop(player, key) {
-  if (key.axe === 'x') {
+  if (key.axis === 'x') {
     if (player.speed.x < 0 && key.dir === '-') player.stopX();
     if (player.speed.x > 0 && key.dir === '+') player.stopX();
   } else {
@@ -385,7 +386,7 @@ function paddleStop(player, key) {
 }
 
 function paddleMove(player, key) {
-  if (key.axe === 'x') {
+  if (key.axis === 'x') {
     if (key.dir === '-') player.moveLeft();
     else player.moveRight();
   } else if (key.dir === '-') player.moveUp();
@@ -393,40 +394,40 @@ function paddleMove(player, key) {
 }
 
 function moveController(player, keyCode, state) {
-  const Keys = [
-    { key: 37, axe: 'x', dir: '-' },
-    { key: 39, axe: 'x', dir: '+' }, // 37-arrow left || 39-arrow right
-    { key: 65, axe: 'x', dir: '-' },
-    { key: 68, axe: 'x', dir: '+' }, // 65-A || 68-D
-    { key: 38, axe: 'y', dir: '-' },
-    { key: 40, axe: 'y', dir: '+' }, // 38-arrow up || 40-arrow down
-    { key: 87, axe: 'y', dir: '-' },
-    { key: 83, axe: 'y', dir: '+' }, // 87-W || 83-S
+  const keys = [//rename array + rename 'key'
+    { key: 37, axis: 'x', dir: '-' },
+    { key: 39, axis: 'x', dir: '+' }, // 37-arrow left || 39-arrow right
+    { key: 65, axis: 'x', dir: '-' },
+    { key: 68, axis: 'x', dir: '+' }, // 65-A || 68-D
+    { key: 38, axis: 'y', dir: '-' },
+    { key: 40, axis: 'y', dir: '+' }, // 38-arrow up || 40-arrow down
+    { key: 87, axis: 'y', dir: '-' },
+    { key: 83, axis: 'y', dir: '+' }, // 87-W || 83-S
   ];
-  Keys.map((key) => {
-    if (key.key === keyCode) {
-      if (state) paddleMove(player, key);
-      else paddleStop(player, key);
+  for (const val of keys) {
+    if (val.key === keyCode) {
+      if (state) paddleMove(player, val);
+      else paddleStop(player, val);
     }
-  });
+  }
 }
 
-function colorHPCheker(hp) {
-  const maxHp = 100;
-  const halfHp = maxHp / 2;
-  const quarterHp = maxHp / 4;
+function colorHpCheker(healthPoints) {
+  const maxhealthPoints = 100;
+  const halfhealthPoints = maxhealthPoints / 2;
+  const quarterhealthPoints = maxhealthPoints / 4;
   let color;
-  if (hp > halfHp) color = 'green';
-  else if (hp < quarterHp) color = 'red';
+  if (healthPoints > halfhealthPoints) color = 'green';
+  else if (healthPoints < quarterhealthPoints) color = 'red';
   else color = 'yellow';
   return color;
 }
 
-function hpBarPainter(ctx, hp, posX, posY) {
+function hpBarPainter(ctx, healthPoints, posX, posY) {
   const barHeight = 10;
   const distToBar = 15;
-  const barWidth = hp / 2.5;
-  ctx.fillStyle = colorHPCheker(hp);
+  const barWidth = healthPoints / 2.5;
+  ctx.fillStyle = colorHpCheker(healthPoints);
   ctx.fillRect(posX, posY - distToBar, barWidth, barHeight);
 }
 
@@ -442,34 +443,28 @@ function modelCutter(lookForward, lookRight) {
   }
 }
 
+function between(begin, end, axis) { return axis >= begin && axis <= end; }
+
 function nightDistDraw(player, obj) {
   const distance = 150;
-  if (
-    player.position.x + player.width + distance >= obj.position.x &&
-    player.position.x - distance <= obj.position.x
-  ) {
-    if (
-      player.position.y + player.height + distance >= obj.position.y &&
-      player.position.y - distance <= obj.position.y
-    ) {
-      obj.draw(ctx);
-    }
-  }
+  const { x, y } = player.position;
+  const { x: objX, y: objY } = obj.position;
+
+  if (!between(x - distance, x + player.width + distance, objX)) return;
+  if (!between(y - distance, y + player.height + distance, objY)) return;
+
+  obj.draw(ctx);
 }
 
 function collisionCheck(obj1, obj2, func, cut) {
-  const xLeftCheck =
-    obj1.colision.x + obj1.width >= obj2.colision.x + cut &&
-    obj1.colision.x + obj1.width <= obj2.colision.x + obj2.width - cut;
-  const xRightCheck =
-    obj1.colision.x <= obj2.colision.x + obj2.width - cut &&
-    obj1.colision.x + cut >= obj2.colision.x;
-  const yUpCheck =
-    obj1.colision.y + obj1.height >= obj2.colision.y &&
-    obj1.colision.y + obj1.height <= obj2.colision.y + obj2.height;
-  const yBottomCheck =
-    obj1.colision.y <= obj2.colision.y + obj2.height &&
-    obj1.colision.y >= obj2.colision.y;
+  const { x: obj1X, y: obj1Y } = obj1.colision;
+  const { x: obj2X, y: obj2Y } = obj2.colision;
+
+  const xLeftCheck = between(obj2X + cut, obj2X + obj2.width, obj1X + obj1.width);
+  const xRightCheck = between(obj2X, obj2X + obj2.width - cut, obj1X);
+  const yUpCheck = between(obj2Y, obj2Y + obj2.height, obj1Y + obj1.height);
+  const yBottomCheck = between(obj2Y, obj2Y + obj2.height, obj1Y);
+
   if (xLeftCheck || xRightCheck) {
     if (yUpCheck || yBottomCheck) {
       func();
@@ -556,7 +551,7 @@ function playerDamage(msDivine) {
   const damagePoints = 5;
 
   if ((new Date() - secDelta) / msDivine >= 1) {
-    player.hp -= damagePoints;
+    player.healthPoints -= damagePoints;
     secDelta = new Date();
   }
 }
@@ -619,7 +614,7 @@ function pauseUI() {
 }
 
 function collisionDetectioner() {
-  const maxHp = 100;
+  const maxhealthPoints = 100;
   const healPoints = 10;
   const defaultColBox = 0;
   const objColBox = 15;
@@ -629,8 +624,8 @@ function collisionDetectioner() {
     fruit,
     () => {
       fruit = new Objects(fruitsImages[random(0, fruitsImages.length)]);
-      player.hp += healPoints;
-      if (player.hp > maxHp) player.hp = maxHp;
+      player.healthPoints += healPoints;
+      if (player.healthPoints > maxhealthPoints) player.healthPoints = maxhealthPoints;
     },
     defaultColBox
   );
